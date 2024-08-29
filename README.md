@@ -16,8 +16,8 @@ QGIS 3.10 (minimum)
 ---
  - The code uses "—break-system-packages" to install the dependencies (try it at your own risk).
  - By default:
-   - If timestamp field is there in clickhouse table then last 8 hours data will be displayed (withour any query), to query data beyond that use query tool to write your own queries.
-   - If timestamp field is not present then 10000 rows of data will be displayed (withour any query), to query data beyond that use query tool to write your own queries.
+   - If timestamp field is there in clickhouse table then last 8 hours data will be displayed (without any query), to query data beyond that use query tool to write your own queries.
+   - If timestamp field is not present then 10000 rows of data will be displayed (without any query), to query data beyond that use query tool to write your own queries.
 ## Install
 
 #### Install from ZIP file
@@ -28,7 +28,7 @@ The plugin can be installed using **Install from ZIP** option on the **QGIS plug
 * From the **Install from ZIP** page, select the zip file and click the **Install** button to install plugin
 * It might take a few minutes to get all the required dependencies for plugin to work
 
-#### Install from QGIS plugin repository
+#### Install from QGIS plugin repository (approval pending)
 
 * Open QGIS application and open plugin manager.
 * Search for `clickhouse_connector` in the All page of the plugin manager.
