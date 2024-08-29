@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ClickhouseDialogBase</class>
+ <widget class="QDialog" name="ClickhouseDialogBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>393</width>
+    <height>731</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Clickhouse_Connector</string>
+  </property>
+  <widget class="QPushButton" name="displaybutton">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>690</y>
+     <width>88</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Display AIS</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="usernamebox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>150</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="passwordbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>200</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="databaselabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>290</y>
+     <width>111</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Database</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="hostlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>161</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter Clickhouse Host</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="portbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>90</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="Connectbutton">
+   <property name="geometry">
+    <rect>
+     <x>300</x>
+     <y>240</y>
+     <width>88</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="passwordlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>180</y>
+     <width>81</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Password</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="portlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>70</y>
+     <width>151</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Enter Clikchouse Port</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="hostbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="tablelabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>350</y>
+     <width>111</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Table</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="usernamelabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>130</y>
+     <width>81</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Username</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="databasebox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>310</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="tablebox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>370</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="locationbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>430</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="locationlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>410</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Parameter with location information</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="timestampbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>490</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="timestamplabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>470</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Parameter with time information</string>
+   </property>
+  </widget>
+  <widget class="QTextEdit" name="querybox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>550</y>
+     <width>381</width>
+     <height>131</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="querylabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>530</y>
+     <width>121</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Basic Query Tool</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="clearbutton">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>690</y>
+     <width>88</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Clear Query</string>
+   </property>
+  </widget>
+  <widget class="QProgressBar" name="progressbar">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>240</y>
+     <width>381</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="value">
+    <number>24</number>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="savecredentialscheck">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>240</y>
+     <width>191</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Save Database Credentials</string>
+   </property>
+  </widget>
+  <zorder>displaybutton</zorder>
+  <zorder>usernamebox</zorder>
+  <zorder>passwordbox</zorder>
+  <zorder>databaselabel</zorder>
+  <zorder>hostlabel</zorder>
+  <zorder>portbox</zorder>
+  <zorder>Connectbutton</zorder>
+  <zorder>passwordlabel</zorder>
+  <zorder>portlabel</zorder>
+  <zorder>hostbox</zorder>
+  <zorder>tablelabel</zorder>
+  <zorder>usernamelabel</zorder>
+  <zorder>databasebox</zorder>
+  <zorder>tablebox</zorder>
+  <zorder>locationbox</zorder>
+  <zorder>locationlabel</zorder>
+  <zorder>timestampbox</zorder>
+  <zorder>timestamplabel</zorder>
+  <zorder>querybox</zorder>
+  <zorder>querylabel</zorder>
+  <zorder>clearbutton</zorder>
+  <zorder>savecredentialscheck</zorder>
+  <zorder>progressbar</zorder>
+ </widget>
+ <tabstops>
+  <tabstop>hostbox</tabstop>
+  <tabstop>portbox</tabstop>
+  <tabstop>usernamebox</tabstop>
+  <tabstop>passwordbox</tabstop>
+  <tabstop>savecredentialscheck</tabstop>
+  <tabstop>Connectbutton</tabstop>
+  <tabstop>databasebox</tabstop>
+  <tabstop>tablebox</tabstop>
+  <tabstop>locationbox</tabstop>
+  <tabstop>timestampbox</tabstop>
+  <tabstop>querybox</tabstop>
+  <tabstop>clearbutton</tabstop>
+  <tabstop>displaybutton</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
