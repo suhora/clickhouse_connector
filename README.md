@@ -18,17 +18,15 @@ The code uses "—break-system-packages" to install the dependencies (try it at 
 
 ## Install
 
-Install from ZIP file ++++++++++++++
+#### Install from ZIP file
 
-The plugin can be installed using **Install from ZIP** option on the
-
-QGIS plugin manager.
+The plugin can be installed using **Install from ZIP** option on the **QGIS plugin manager**.
 
 * Download zip file from the required plugin released version.
 * From the **Install from ZIP** page, select the zip file and click the **Install** button to install plugin
 * It might take a few minutes to get all the required dependencies for plugin to work
 
-Install from QGIS plugin repository ++++++++++++++
+#### Install from QGIS plugin repository
 
 * Open QGIS application and open plugin manager.
 * Search for `clickhouse_connector` in the All page of the plugin manager.
