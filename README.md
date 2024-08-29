@@ -11,11 +11,13 @@ Query and Visualize [Clickhouse](https://clickhouse.com/) Point data in QGIS.
 ************
 QGIS 3.10 (minimum)
 
-**Note**
+**Important Note**
 
 ---
-The code uses "—break-system-packages" to install the dependencies (try it at your own risk)
-
+ - The code uses "—break-system-packages" to install the dependencies (try it at your own risk).
+ - By default:
+   - If timestamp field is there in clickhouse table then last 8 hours data will be displayed (withour any query), to query data beyond that use query tool to write your own queries.
+   - If timestamp field is not present then 10000 rows of data will be displayed (withour any query), to query data beyond that use query tool to write your own queries.
 ## Install
 
 #### Install from ZIP file
