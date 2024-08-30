@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=clickhouse, qgis, python, clickhouse_plugin
 
-homepage=https://suhora.com
+homepage=https://suhora.com/qgis-plugin/
 category=Plugins
 icon=suhora.png
 # experimental flag
