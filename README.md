@@ -28,7 +28,7 @@ The plugin can be installed using **Install from ZIP** option on the **QGIS plug
 * From the **Install from ZIP** page, select the zip file and click the **Install** button to install plugin
 * It might take a few minutes to get all the required dependencies for plugin to work
 
-#### Install from QGIS plugin repository (approval pending)
+#### Install from QGIS plugin repository in experimental plugins
 
 * Open QGIS application and open plugin manager.
 * Search for `clickhouse_connector` in the All page of the plugin manager.
