@@ -12,50 +12,24 @@ import re
 from . import resources
 
 import sys
+import pip
 import platform
-import subprocess
-
-userpc = platform.system()
-if 'Linux' in userpc:
-    # qgis_python_path = QgsApplication.prefixPath() + '/bin/python3'
-    qgis_python_path = sys.executable
-elif 'Windows' in userpc:
-    # qgis_python_path = r'C:\Program Files\QGIS 3.38.0\bin\python3'
-    winpath = sys.executable
-    directory = os.path.dirname(winpath)
-    qgis_python_path = os.path.join(directory, "python3")
-# Path to get-pip.py
-get_pip_path = os.path.join(os.path.dirname(__file__), 'get-pip.py')
-
-# Download get-pip.py if it doesn't exist
-if not os.path.exists(get_pip_path):
-    import urllib.request
-    urllib.request.urlretrieve('https://bootstrap.pypa.io/get-pip.py', get_pip_path)
-
-# Run get-pip.py using the QGIS Python interpreter
-subprocess.check_call([qgis_python_path, get_pip_path, '--break-system-packages'])
 
 # Define the target directory for the library installation
 libs_dir = os.path.join(os.path.dirname(__file__), 'libs')
-
 os.makedirs(libs_dir, exist_ok=True)
 
-# Check if clickhouse-connect is already installed
-if not any(os.path.exists(os.path.join(libs_dir, pkg, 'clickhouse_connect')) for pkg in os.listdir(libs_dir) if os.path.isdir(os.path.join(libs_dir, pkg))):
-    # Install clickhouse-connect into the specified directory
-    subprocess.check_call([qgis_python_path, '-m', 'pip', 'install', '--target=' + libs_dir, 'clickhouse-connect', '--break-system-packages'])
-
 # Add the libs folder to the Python path
 sys.path.append(libs_dir)
 
-# Define the target directory for the library installation
-libs_dir = os.path.join(os.path.dirname(__file__), 'libs')
+# Add the libs folder to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'libs'))
 
-# Add the libs folder to the Python path
-sys.path.append(libs_dir)
-# Add the libs folder to the Python path
-# sys.path.append(os.path.join(os.path.dirname(__file__), 'libs'))
-import clickhouse_connect
+try:
+    import clickhouse_connect
+except:
+    # Install to lib target if missing
+    pip.main(['install', 'install', '--target=' + libs_dir, 'clickhouse-connect'])
 
 class Clickhouse:
     """QGIS Plugin Implementation."""
