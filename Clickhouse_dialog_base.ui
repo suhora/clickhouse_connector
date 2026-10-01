@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>393</width>
-    <height>731</height>
+    <height>847</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>300</x>
-     <y>690</y>
+     <y>806</y>
      <width>88</width>
      <height>27</height>
     </rect>
@@ -177,17 +177,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QComboBox" name="locationbox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>430</y>
-     <width>381</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="locationlabel">
+  <widget class="QLabel" name="locationmodelabel">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -197,37 +187,148 @@
     </rect>
    </property>
    <property name="text">
-    <string>Select Parameter with location information</string>
+    <string>Location Data Type</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="timestampbox">
+  <widget class="QRadioButton" name="pointmoderadio">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>490</y>
-     <width>381</width>
-     <height>27</height>
+     <y>430</y>
+     <width>110</width>
+     <height>25</height>
     </rect>
    </property>
+   <property name="text">
+    <string>Point Column</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
   </widget>
-  <widget class="QLabel" name="timestamplabel">
+  <widget class="QRadioButton" name="latlonmoderadio">
+   <property name="geometry">
+    <rect>
+     <x>125</x>
+     <y>430</y>
+     <width>140</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Lat/Lon Columns</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="linestringmoderadio">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>430</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>LineString Column</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="linestringlabel">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>470</y>
+     <y>465</y>
      <width>291</width>
      <height>19</height>
     </rect>
    </property>
    <property name="text">
-    <string>Select Parameter with time information</string>
+    <string>Select LineString Column</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="linestringbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>485</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="locationlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>465</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Point Column</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="locationbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>485</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="latitudelabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>465</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Latitude Column (numeric)</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="latitudebox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>485</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="longitudelabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>520</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select Longitude Column (numeric)</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="longitudebox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>540</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
    </property>
   </widget>
   <widget class="QTextEdit" name="querybox">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>550</y>
+     <y>600</y>
      <width>381</width>
      <height>131</height>
     </rect>
@@ -237,7 +338,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>530</y>
+     <y>580</y>
      <width>121</width>
      <height>19</height>
     </rect>
@@ -246,11 +347,81 @@
     <string>Basic Query Tool</string>
    </property>
   </widget>
+  <widget class="QLabel" name="gridsettingslabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>740</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Grid Settings</string>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="gridrowsbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>765</y>
+     <width>123</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="prefix">
+    <string>Rows: </string>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>200</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="gridcolsbox">
+   <property name="geometry">
+    <rect>
+     <x>139</x>
+     <y>765</y>
+     <width>123</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="prefix">
+    <string>Cols: </string>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>200</number>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="pointspercellbox">
+   <property name="geometry">
+    <rect>
+     <x>268</x>
+     <y>765</y>
+     <width>123</width>
+     <height>27</height>
+    </rect>
+   </property>
+   <property name="prefix">
+    <string>Pts/Cell: </string>
+   </property>
+   <property name="minimum">
+    <number>1</number>
+   </property>
+   <property name="maximum">
+    <number>100000</number>
+   </property>
+  </widget>
   <widget class="QPushButton" name="clearbutton">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>690</y>
+     <y>806</y>
      <width>88</width>
      <height>27</height>
     </rect>
@@ -299,12 +470,24 @@
   <zorder>usernamelabel</zorder>
   <zorder>databasebox</zorder>
   <zorder>tablebox</zorder>
+  <zorder>locationmodelabel</zorder>
+  <zorder>pointmoderadio</zorder>
+  <zorder>latlonmoderadio</zorder>
+  <zorder>linestringmoderadio</zorder>
   <zorder>locationbox</zorder>
   <zorder>locationlabel</zorder>
-  <zorder>timestampbox</zorder>
-  <zorder>timestamplabel</zorder>
+  <zorder>latitudebox</zorder>
+  <zorder>latitudelabel</zorder>
+  <zorder>longitudebox</zorder>
+  <zorder>longitudelabel</zorder>
+  <zorder>linestringbox</zorder>
+  <zorder>linestringlabel</zorder>
   <zorder>querybox</zorder>
   <zorder>querylabel</zorder>
+  <zorder>gridsettingslabel</zorder>
+  <zorder>gridrowsbox</zorder>
+  <zorder>gridcolsbox</zorder>
+  <zorder>pointspercellbox</zorder>
   <zorder>clearbutton</zorder>
   <zorder>savecredentialscheck</zorder>
   <zorder>progressbar</zorder>
@@ -318,9 +501,17 @@
   <tabstop>Connectbutton</tabstop>
   <tabstop>databasebox</tabstop>
   <tabstop>tablebox</tabstop>
+  <tabstop>pointmoderadio</tabstop>
+  <tabstop>latlonmoderadio</tabstop>
+  <tabstop>linestringmoderadio</tabstop>
   <tabstop>locationbox</tabstop>
-  <tabstop>timestampbox</tabstop>
+  <tabstop>latitudebox</tabstop>
+  <tabstop>longitudebox</tabstop>
+  <tabstop>linestringbox</tabstop>
   <tabstop>querybox</tabstop>
+  <tabstop>gridrowsbox</tabstop>
+  <tabstop>gridcolsbox</tabstop>
+  <tabstop>pointspercellbox</tabstop>
   <tabstop>clearbutton</tabstop>
   <tabstop>displaybutton</tabstop>
  </tabstops>
