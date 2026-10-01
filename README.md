@@ -1,6 +1,6 @@
 # clickhouse-connector
 
-It connects Clickhouse with QGIS, enabling seamless integration and visualization of spatial data. It retrieves records from ClickHouse — either a native `Point` column or separate latitude/longitude columns — and displays them as a live, continuously-refreshing layer in QGIS as you pan and zoom. This plugin allows users to easily manage and visualize large geospatial datasets stored in Clickhouse directly within the QGIS environment.
+It connects Clickhouse with QGIS, enabling seamless integration and visualization of spatial data. It retrieves records from ClickHouse — a native `Point` column, separate latitude/longitude columns, or a native `LineString` column — and displays them as a live, continuously-refreshing layer in QGIS as you pan and zoom. This plugin allows users to easily manage and visualize large geospatial datasets stored in Clickhouse directly within the QGIS environment.
 
 # Clickhouse Plugin for QGIS
 
@@ -17,9 +17,13 @@ QGIS 3.34 LTR (tested; earlier 3.x versions not verified)
 ---
  - The code uses "—break-system-packages" to install the dependencies (try it at your own risk).
  - **Location Data Type**: choose how your table stores position data before clicking Display AIS —
-   - **Single Point Column**: a native ClickHouse `Point` column.
-   - **Separate Lat/Lon Columns**: two separate numeric (`Float32`/`Float64`) columns; pick which is latitude and which is longitude.
- - **Viewport-driven rendering**: Display AIS doesn't load the whole result set at once. It splits the current map view into a grid and fetches up to a capped number of points per grid cell, so the total number of rendered points stays bounded no matter how large the table is. As you pan or zoom, the grid and query automatically refresh to match the new view. Grid rows, columns, and points-per-cell are adjustable from the **Grid Settings** row (defaults: 10 rows, 10 columns, 100 points per cell). Recommended to use <200k capped points overall. 
+   - **Point Column**: a native ClickHouse `Point` column.
+   - **Lat/Lon Columns**: two separate numeric (`Float32`/`Float64`) columns; pick which is latitude and which is longitude.
+   - **LineString Column**: a native ClickHouse `LineString` column, rendered as a line layer instead of points.
+ - **Viewport-driven rendering**: Display AIS doesn't load the whole result set at once.
+   - In Point/Lat-Lon mode, it splits the current map view into a grid and fetches up to a capped number of points per grid cell, so the total number of rendered points stays bounded no matter how large the table is. Grid rows, columns, and points-per-cell are adjustable from the **Grid Settings** row (defaults: 10 rows, 10 columns, 100 points per cell). Recommended to use <200k capped points overall.
+   - In LineString mode, grid-cell capping doesn't apply to lines (a line has no single position to bucket into a cell), so the **Grid Settings** row is hidden and v1 fetches every line whose bounding box overlaps the viewport, uncapped — a pathologically large table of huge lines can mean a slow/heavy fetch.
+   - Either way, as you pan or zoom the query automatically refreshes to match the new view.
  - By default, before the per-cell cap is applied, the query is simply `SELECT * FROM database.table` — shown as placeholder text in the Basic Query Tool box once a table is selected. Type your own query there (e.g. to filter by time range or any other column) to use that instead — it still composes with the viewport grid/cap.
    - A very zoomed-out view (e.g. the whole world) still has to check every candidate row against the current viewport, so it can be noticeably slower than a zoomed-in view. May be able to resolve with a spatial index in the DB.
 ## Install

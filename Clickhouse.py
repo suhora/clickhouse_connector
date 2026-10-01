@@ -166,9 +166,12 @@ class ClickhouseDialog(QDialog):
         self.ui.displaybutton.clicked.connect(self.display_data)
         self.ui.clearbutton.clicked.connect(self.clear_filter)
         self.ui.pointmoderadio.toggled.connect(self.update_location_mode)
+        self.ui.latlonmoderadio.toggled.connect(self.update_location_mode)
+        self.ui.linestringmoderadio.toggled.connect(self.update_location_mode)
         self.ui.locationbox.currentIndexChanged.connect(self.enable_querybox)
         self.ui.latitudebox.currentIndexChanged.connect(self.enable_querybox)
         self.ui.longitudebox.currentIndexChanged.connect(self.enable_querybox)
+        self.ui.linestringbox.currentIndexChanged.connect(self.enable_querybox)
 
     def _on_dialog_finished(self, result):
         # ClickhouseDialog is reused across invocations (see Clickhouse.run()'s
@@ -186,12 +189,26 @@ class ClickhouseDialog(QDialog):
 
     def update_location_mode(self):
         is_point_mode = self.ui.pointmoderadio.isChecked()
+        is_latlon_mode = self.ui.latlonmoderadio.isChecked()
+        is_linestring_mode = self.ui.linestringmoderadio.isChecked()
+
         self.ui.locationlabel.setVisible(is_point_mode)
         self.ui.locationbox.setVisible(is_point_mode)
-        self.ui.latitudelabel.setVisible(not is_point_mode)
-        self.ui.latitudebox.setVisible(not is_point_mode)
-        self.ui.longitudelabel.setVisible(not is_point_mode)
-        self.ui.longitudebox.setVisible(not is_point_mode)
+        self.ui.latitudelabel.setVisible(is_latlon_mode)
+        self.ui.latitudebox.setVisible(is_latlon_mode)
+        self.ui.longitudelabel.setVisible(is_latlon_mode)
+        self.ui.longitudebox.setVisible(is_latlon_mode)
+        self.ui.linestringlabel.setVisible(is_linestring_mode)
+        self.ui.linestringbox.setVisible(is_linestring_mode)
+
+        # Grid-cell capping has no effect on an uncapped linestring fetch (v1 fetches
+        # everything intersecting the viewport) -- hide it rather than leave controls
+        # that silently do nothing.
+        self.ui.gridsettingslabel.setVisible(not is_linestring_mode)
+        self.ui.gridrowsbox.setVisible(not is_linestring_mode)
+        self.ui.gridcolsbox.setVisible(not is_linestring_mode)
+        self.ui.pointspercellbox.setVisible(not is_linestring_mode)
+
         self.enable_querybox()
 
     def connect_to_clickhouse(self):
@@ -246,16 +263,23 @@ class ClickhouseDialog(QDialog):
             self.ui.locationbox.clear()
             self.ui.latitudebox.clear()
             self.ui.longitudebox.clear()
+            self.ui.linestringbox.clear()
 
             point_columns = [name for name, column_type, *_ in columns if _base_type(column_type) == 'Point']
             numeric_columns = [name for name, column_type, *_ in columns if _base_type(column_type) in ('Float32', 'Float64')]
+            linestring_columns = [name for name, column_type, *_ in columns if _base_type(column_type) == 'LineString']
 
             self.ui.locationbox.addItems(point_columns)
             self.ui.latitudebox.addItems(numeric_columns)
             self.ui.longitudebox.addItems(numeric_columns)
+            self.ui.linestringbox.addItems(linestring_columns)
 
             # Default to whichever mode this table actually has data for
-            if not point_columns and numeric_columns:
+            if point_columns:
+                self.ui.pointmoderadio.setChecked(True)
+            elif linestring_columns:
+                self.ui.linestringmoderadio.setChecked(True)
+            elif numeric_columns:
                 self.ui.latlonmoderadio.setChecked(True)
             else:
                 self.ui.pointmoderadio.setChecked(True)
@@ -268,6 +292,8 @@ class ClickhouseDialog(QDialog):
     def enable_querybox(self):
         if self.ui.pointmoderadio.isChecked():
             has_location = bool(self.ui.locationbox.currentText())
+        elif self.ui.linestringmoderadio.isChecked():
+            has_location = bool(self.ui.linestringbox.currentText())
         else:
             has_location = bool(self.ui.latitudebox.currentText()) and bool(self.ui.longitudebox.currentText())
         self.ui.querybox.setEnabled(has_location)
@@ -278,11 +304,19 @@ class ClickhouseDialog(QDialog):
         custom_query = self.ui.querybox.toPlainText().strip()
 
         if self.ui.pointmoderadio.isChecked():
+            geometry_kind = 'point'
             location_column = self.ui.locationbox.currentText()
             if not database or not table or not location_column:
                 QMessageBox.warning(self, "Missing Information", "Please select database, table, and location column.")
                 return
+        elif self.ui.linestringmoderadio.isChecked():
+            geometry_kind = 'linestring'
+            location_column = self.ui.linestringbox.currentText()
+            if not database or not table or not location_column:
+                QMessageBox.warning(self, "Missing Information", "Please select database, table, and LineString column.")
+                return
         else:
+            geometry_kind = 'point'
             lat_column = self.ui.latitudebox.currentText()
             lon_column = self.ui.longitudebox.currentText()
             if not database or not table or not lat_column or not lon_column:
@@ -322,6 +356,7 @@ class ClickhouseDialog(QDialog):
             session = {
                 'base_query': base_query,
                 'location_column': location_column,
+                'geometry_kind': geometry_kind,
                 'columns': column_defs,
                 'grid_rows': self.ui.gridrowsbox.value(),
                 'grid_cols': self.ui.gridcolsbox.value(),

@@ -11,7 +11,7 @@ Clickhouse.py via error_occurred/busy_changed signals only.
 from qgis.PyQt.QtCore import QObject, QTimer, pyqtSignal
 
 from .viewport_layer import create_layer
-from .viewport_query import build_query, canvas_bbox_wgs84, grid_cell_size
+from .viewport_query import build_linestring_query, build_query, canvas_bbox_wgs84, grid_cell_size
 from .viewport_query_thread import ViewportQueryThread
 
 DEBOUNCE_MS = 350
@@ -41,14 +41,15 @@ class ViewportStreamer(QObject):
 
     def start(self, client, session):
         """session: dict with keys base_query, location_column, columns (list of
-        (name, base_type) tuples, Nullable(...) already stripped), grid_rows, grid_cols,
-        points_per_cell (all user-configurable, sourced from the dialog's grid-settings
-        spin boxes -- see viewport_query.GRID_ROWS/GRID_COLS/POINTS_PER_CELL for the
-        shipped defaults, not hardcoded here)."""
+        (name, base_type) tuples, Nullable(...) already stripped), geometry_kind
+        ('point' or 'linestring'), grid_rows, grid_cols, points_per_cell (grid settings
+        are point-mode-only -- see viewport_query.GRID_ROWS/GRID_COLS/POINTS_PER_CELL for
+        the shipped defaults, not hardcoded here; linestring mode ignores them, v1 fetches
+        everything intersecting the viewport)."""
         self.stop()
         self._client = client
         self._session = session
-        self._layer = create_layer(session['columns'])
+        self._layer = create_layer(session['columns'], session.get('geometry_kind', 'point'))
         self._streaming = True
         self.iface.mapCanvas().extentsChanged.connect(self._on_extents_changed)
         self._on_viewport_settled()  # kick off the first fetch immediately
@@ -79,18 +80,26 @@ class ViewportStreamer(QObject):
         gen = self._generation
         self._layer_generation_started = None
 
-        grid_rows = self._session['grid_rows']
-        grid_cols = self._session['grid_cols']
-        points_per_cell = self._session['points_per_cell']
-
         bbox = canvas_bbox_wgs84(self.iface)
-        cell_h, cell_w = grid_cell_size(bbox, grid_rows, grid_cols)
         column_names = [name for name, _ in self._session['columns']]
-        sql, params = build_query(
-            self._session['base_query'],
-            self._session['location_column'],
-            bbox, cell_h, cell_w, grid_rows, grid_cols, points_per_cell,
-        )
+        geometry_kind = self._session.get('geometry_kind', 'point')
+
+        if geometry_kind == 'linestring':
+            sql, params = build_linestring_query(
+                self._session['base_query'],
+                self._session['location_column'],
+                bbox,
+            )
+        else:
+            grid_rows = self._session['grid_rows']
+            grid_cols = self._session['grid_cols']
+            points_per_cell = self._session['points_per_cell']
+            cell_h, cell_w = grid_cell_size(bbox, grid_rows, grid_cols)
+            sql, params = build_query(
+                self._session['base_query'],
+                self._session['location_column'],
+                bbox, cell_h, cell_w, grid_rows, grid_cols, points_per_cell,
+            )
         self._launch_or_queue(gen, sql, params, column_names)
 
     def _launch_or_queue(self, gen, sql, params, column_names):
@@ -106,6 +115,7 @@ class ViewportStreamer(QObject):
         self.busy_changed.emit(True)
         thread = ViewportQueryThread(
             self._client, sql, params, gen, column_names, self._session['location_column'],
+            self._session.get('geometry_kind', 'point'),
         )
         thread.result_block.connect(self._on_result_block)
         thread.finished_ok.connect(self._on_finished_ok)

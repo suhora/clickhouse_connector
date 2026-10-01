@@ -1,26 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Geo/SQL construction for viewport-driven, per-grid-cell-capped ClickHouse queries.
+"""Geo/SQL construction for viewport-driven ClickHouse queries.
 
 Pure functions only (aside from the QGIS CRS transform) — no threading, no Qt signals.
+The qgis.core import is deferred into canvas_bbox_wgs84() itself (the only function
+that touches it) so the rest of this module, including build_query/build_linestring_query,
+imports and runs with plain `python viewport_query.py` outside a QGIS process — see
+_demo() below.
 """
-
-from qgis.core import (
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
-    QgsProject,
-)
 
 GRID_ROWS = 10
 GRID_COLS = 10
 POINTS_PER_CELL = 100
 
-_WGS84 = QgsCoordinateReferenceSystem("EPSG:4326")
-
 
 def canvas_bbox_wgs84(iface):
     """Current map canvas extent, transformed to EPSG:4326 (WGS84 lat/lon degrees)."""
+    from qgis.core import QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsProject
+    wgs84 = QgsCoordinateReferenceSystem("EPSG:4326")
     canvas = iface.mapCanvas()
-    transform = QgsCoordinateTransform(canvas.mapSettings().destinationCrs(), _WGS84, QgsProject.instance())
+    transform = QgsCoordinateTransform(canvas.mapSettings().destinationCrs(), wgs84, QgsProject.instance())
     return transform.transformBoundingBox(canvas.extent())
 
 
@@ -98,3 +96,97 @@ def build_query(base_query, location_column, bbox, cell_h, cell_w, grid_rows, gr
         )
 
     return sql, params
+
+
+def build_linestring_query(base_query, location_column, bbox):
+    """Wrap base_query in a bbox-overlap filter for a LineString-typed column.
+
+    Unlike build_query's per-cell point cap, a line has no single position to bucket
+    into a grid cell, so v1 fetches everything whose own bounding box overlaps the
+    viewport -- no LIMIT BY, no row cap (Clickhouse.py hides the grid-settings controls
+    entirely in this mode, since they'd have no effect here).
+
+    The overlap test compares the line's own arrayMin/arrayMax of its vertices against
+    the viewport bbox -- the standard R-tree-style bbox prefilter. It also correctly
+    matches a line that crosses the viewport without either endpoint inside it, since it
+    only needs the two bboxes to overlap, not a vertex to land inside the viewport.
+    Trade-off: a line whose bbox overlaps the viewport but doesn't actually cross it
+    (e.g. a steep diagonal) can be an accepted false positive -- no exact segment
+    clipping in v1.
+
+    length(...) >= 2 excludes degenerate 0/1-vertex rows at the SQL layer: ClickHouse's
+    arrayMin/arrayMax of an empty array default to 0 rather than erroring (confirmed
+    against a live instance), which would otherwise synthesize a bogus (0,0) bbox and
+    wrongly match the row whenever the viewport includes null island.
+
+    Returns (sql, params) in the same client.query(sql, parameters=params) /
+    client.query_row_block_stream(sql, parameters=params) shape as build_query().
+    """
+    base = base_query.strip().rstrip(';')
+    col = location_column
+
+    # ClickHouse's LineString type is Array(Point) = Array(Tuple(Float64, Float64)) in
+    # (x, y) = (lon, lat) order, same convention as the Point column case in build_query
+    # -- must stay consistent with the vertex unpack in viewport_query_thread.py's
+    # _extract_linestring().
+    lon_expr = f'arrayMap(p -> tupleElement(p, 1), base.{col})'
+    lat_expr = f'arrayMap(p -> tupleElement(p, 2), base.{col})'
+
+    params = {
+        'min_lat': bbox.yMinimum(),
+        'max_lat': bbox.yMaximum(),
+        'min_lon': bbox.xMinimum(),
+        'max_lon': bbox.xMaximum(),
+    }
+    where = (
+        f"WHERE length(base.{col}) >= 2\n"
+        f"  AND arrayMax({lon_expr}) >= {{min_lon:Float64}} AND arrayMin({lon_expr}) <= {{max_lon:Float64}}\n"
+        f"  AND arrayMax({lat_expr}) >= {{min_lat:Float64}} AND arrayMin({lat_expr}) <= {{max_lat:Float64}}"
+    )
+    sql = f"SELECT * FROM ({base}) AS base\n{where}"
+    return sql, params
+
+
+def _demo():
+    """Assert-based self-check for the pure SQL-building functions -- run as plain
+    `python viewport_query.py`, no QGIS/pytest/unittest required."""
+
+    class _Bbox:
+        def __init__(self, min_lon, min_lat, max_lon, max_lat):
+            self._min_lon, self._min_lat = min_lon, min_lat
+            self._max_lon, self._max_lat = max_lon, max_lat
+
+        def xMinimum(self): return self._min_lon
+        def xMaximum(self): return self._max_lon
+        def yMinimum(self): return self._min_lat
+        def yMaximum(self): return self._max_lat
+
+    bbox = _Bbox(-10.0, -5.0, 10.0, 5.0)
+
+    # -- build_query: Point-column mode --
+    cell_h, cell_w = grid_cell_size(bbox, rows=2, cols=2)
+    sql, params = build_query("SELECT * FROM t", "pos", bbox, cell_h, cell_w, 2, 2, points_per_cell=50)
+    assert "tupleElement(base.pos, 1)" in sql
+    assert "LIMIT {points_per_cell:UInt32} BY" in sql
+    assert params['min_lon'] == -10.0 and params['max_lat'] == 5.0
+
+    # -- build_query: lat/lon-tuple mode --
+    sql, params = build_query("SELECT * FROM t", ("lat", "lon"), bbox, cell_h, cell_w, 2, 2)
+    assert "base.lat" in sql and "base.lon" in sql
+
+    # -- build_query: degenerate zero-size extent falls back to a flat cap --
+    sql, params = build_query("SELECT * FROM t", "pos", bbox, 0, 0, 2, 2, points_per_cell=50)
+    assert "LIMIT 200" in sql and "LIMIT BY" not in sql
+
+    # -- build_linestring_query --
+    sql, params = build_linestring_query("SELECT * FROM t", "track", bbox)
+    assert "length(base.track) >= 2" in sql
+    assert "arrayMap(p -> tupleElement(p, 1), base.track)" in sql
+    assert "LIMIT" not in sql  # v1: no cap, fetch everything intersecting the viewport
+    assert params == {'min_lat': -5.0, 'max_lat': 5.0, 'min_lon': -10.0, 'max_lon': 10.0}
+
+    print("viewport_query self-check OK")
+
+
+if __name__ == "__main__":
+    _demo()

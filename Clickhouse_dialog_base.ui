@@ -195,12 +195,12 @@
     <rect>
      <x>10</x>
      <y>430</y>
-     <width>180</width>
+     <width>110</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
-    <string>Single Point Column</string>
+    <string>Point Column</string>
    </property>
    <property name="checked">
     <bool>true</bool>
@@ -209,14 +209,50 @@
   <widget class="QRadioButton" name="latlonmoderadio">
    <property name="geometry">
     <rect>
-     <x>200</x>
+     <x>125</x>
      <y>430</y>
-     <width>190</width>
+     <width>140</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
-    <string>Separate Lat/Lon Columns</string>
+    <string>Lat/Lon Columns</string>
+   </property>
+  </widget>
+  <widget class="QRadioButton" name="linestringmoderadio">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>430</y>
+     <width>113</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>LineString Column</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="linestringlabel">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>465</y>
+     <width>291</width>
+     <height>19</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Select LineString Column</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="linestringbox">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>485</y>
+     <width>381</width>
+     <height>27</height>
+    </rect>
    </property>
   </widget>
   <widget class="QLabel" name="locationlabel">
@@ -437,12 +473,15 @@
   <zorder>locationmodelabel</zorder>
   <zorder>pointmoderadio</zorder>
   <zorder>latlonmoderadio</zorder>
+  <zorder>linestringmoderadio</zorder>
   <zorder>locationbox</zorder>
   <zorder>locationlabel</zorder>
   <zorder>latitudebox</zorder>
   <zorder>latitudelabel</zorder>
   <zorder>longitudebox</zorder>
   <zorder>longitudelabel</zorder>
+  <zorder>linestringbox</zorder>
+  <zorder>linestringlabel</zorder>
   <zorder>querybox</zorder>
   <zorder>querylabel</zorder>
   <zorder>gridsettingslabel</zorder>
@@ -464,9 +503,11 @@
   <tabstop>tablebox</tabstop>
   <tabstop>pointmoderadio</tabstop>
   <tabstop>latlonmoderadio</tabstop>
+  <tabstop>linestringmoderadio</tabstop>
   <tabstop>locationbox</tabstop>
   <tabstop>latitudebox</tabstop>
   <tabstop>longitudebox</tabstop>
+  <tabstop>linestringbox</tabstop>
   <tabstop>querybox</tabstop>
   <tabstop>gridrowsbox</tabstop>
   <tabstop>gridcolsbox</tabstop>

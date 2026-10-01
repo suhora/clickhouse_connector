@@ -13,11 +13,14 @@ from qgis.PyQt.QtCore import QThread, pyqtSignal
 
 
 class ViewportQueryThread(QThread):
-    result_block = pyqtSignal(int, list)   # generation, list[(x, y, attrs_dict)]
+    # generation, list[(geom, attrs_dict)] -- geom is (x, y) in point mode, or
+    # list[(x, y), ...] (vertices) in linestring mode.
+    result_block = pyqtSignal(int, list)
     finished_ok = pyqtSignal(int)          # generation -- query completed, no error
     error = pyqtSignal(int, str)           # generation, message
 
-    def __init__(self, client, sql, params, generation, column_names, location_column):
+    def __init__(self, client, sql, params, generation, column_names, location_column,
+                 geometry_kind='point'):
         super().__init__()
         self.client = client
         self.sql = sql
@@ -25,6 +28,7 @@ class ViewportQueryThread(QThread):
         self.generation = generation
         self.column_names = column_names
         self.location_column = location_column
+        self.geometry_kind = geometry_kind
         self._cancel_requested = False
 
     def request_cancel(self):
@@ -51,26 +55,11 @@ class ViewportQueryThread(QThread):
     def _process_block(self, block):
         out = []
         for row in block:
-            if isinstance(self.location_column, tuple):
-                lat_col, lon_col = self.location_column
-                y = row[self.column_names.index(lat_col)]
-                x = row[self.column_names.index(lon_col)]
-                if y is None or x is None:
-                    continue
+            if self.geometry_kind == 'linestring':
+                geom = self._extract_linestring(row)
             else:
-                location_index = self.column_names.index(self.location_column)
-                location = row[location_index]
-                if not isinstance(location, tuple) or len(location) != 2:
-                    continue
-                # Must match the tupleElement(col, 1/2) order used to build the bbox
-                # filter in viewport_query.build_query() -- (lon, lat).
-                x, y = location
-
-            # Skip points where latitude and longitude are both 0, and obviously
-            # invalid coordinates.
-            if x == 0 and y == 0:
-                continue
-            if x < -180 or x > 180 or y < -90 or y > 90:
+                geom = self._extract_point(row)
+            if geom is None:
                 continue
 
             row = list(row)
@@ -78,5 +67,51 @@ class ViewportQueryThread(QThread):
                 if isinstance(value, datetime):
                     row[i] = value.strftime('%Y-%m-%d %H:%M:%S')
             attrs = {col: val for col, val in zip(self.column_names, row)}
-            out.append((x, y, attrs))
+            out.append((geom, attrs))
         return out
+
+    def _extract_point(self, row):
+        """Returns (x, y) in EPSG:4326 degrees, or None if the row has no usable point."""
+        if isinstance(self.location_column, tuple):
+            lat_col, lon_col = self.location_column
+            y = row[self.column_names.index(lat_col)]
+            x = row[self.column_names.index(lon_col)]
+            if y is None or x is None:
+                return None
+        else:
+            location_index = self.column_names.index(self.location_column)
+            location = row[location_index]
+            if not isinstance(location, tuple) or len(location) != 2:
+                return None
+            # Must match the tupleElement(col, 1/2) order used to build the bbox
+            # filter in viewport_query.build_query() -- (lon, lat).
+            x, y = location
+
+        # Skip points where latitude and longitude are both 0 (ClickHouse's
+        # no-value sentinel for a missing Point), and obviously invalid coordinates.
+        if x == 0 and y == 0:
+            return None
+        if x < -180 or x > 180 or y < -90 or y > 90:
+            return None
+        return (x, y)
+
+    def _extract_linestring(self, row):
+        """Returns a list of (x, y) vertices in EPSG:4326 degrees, or None if the row
+        has no usable line. Unlike a single Point column, a real line can legitimately
+        pass through (0, 0) (equator/prime meridian) -- that's not treated as a missing-
+        value sentinel here, only the length(...) >= 2 guard (also enforced at the SQL
+        layer in build_linestring_query) and per-vertex range checks apply."""
+        location_index = self.column_names.index(self.location_column)
+        vertices = row[location_index]
+        if not vertices or len(vertices) < 2:
+            return None
+
+        points = []
+        for vertex in vertices:
+            if not isinstance(vertex, tuple) or len(vertex) != 2:
+                return None
+            x, y = vertex
+            if x < -180 or x > 180 or y < -90 or y > 90:
+                return None
+            points.append((x, y))
+        return points

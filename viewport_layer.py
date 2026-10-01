@@ -46,33 +46,42 @@ def _coerce_value(value, base_type):
     return str(value)
 
 
-def create_layer(columns):
+def create_layer(columns, geometry_kind='point'):
     """columns: list of (name, base_type) tuples from DESCRIBE, Nullable(...) already
-    stripped (see Clickhouse.py's _base_type() helper). Returns a ViewportLayer."""
-    layer = QgsVectorLayer("Point?crs=EPSG:4326", "Clickhouse Data", "memory")
+    stripped (see Clickhouse.py's _base_type() helper). geometry_kind: 'point' or
+    'linestring' -- picks the memory layer's geometry type; add_rows() below dispatches
+    the matching QgsGeometry construction. Returns a ViewportLayer."""
+    qgis_geom_type = 'LineString' if geometry_kind == 'linestring' else 'Point'
+    layer = QgsVectorLayer(f"{qgis_geom_type}?crs=EPSG:4326", "Clickhouse Data", "memory")
     provider = layer.dataProvider()
     provider.addAttributes([QgsField(name, _field_type(base_type)) for name, base_type in columns])
     layer.updateFields()
     QgsProject.instance().addMapLayer(layer)
-    return ViewportLayer(layer, columns)
+    return ViewportLayer(layer, columns, geometry_kind)
 
 
 class ViewportLayer:
-    def __init__(self, layer, columns):
+    def __init__(self, layer, columns, geometry_kind='point'):
         self.layer = layer
         self._fields = layer.fields()
         self._columns = columns  # list of (name, base_type)
+        self._geometry_kind = geometry_kind
 
     def truncate(self):
         self.layer.dataProvider().truncate()
 
     def add_rows(self, rows):
-        """rows: list[(x, y, attrs_dict)] -- x/y in EPSG:4326 degrees."""
+        """rows: list[(geom, attrs_dict)] -- geom is (x, y) in point mode, or
+        list[(x, y), ...] vertices in linestring mode, both in EPSG:4326 degrees."""
         provider = self.layer.dataProvider()
         features = []
-        for x, y, attrs in rows:
+        for geom, attrs in rows:
             feature = QgsFeature(self._fields)
-            feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+            if self._geometry_kind == 'linestring':
+                feature.setGeometry(QgsGeometry.fromPolylineXY([QgsPointXY(x, y) for x, y in geom]))
+            else:
+                x, y = geom
+                feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
             feature.setAttributes([_coerce_value(attrs.get(name), base_type) for name, base_type in self._columns])
             features.append(feature)
         provider.addFeatures(features)
