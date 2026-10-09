@@ -6,11 +6,11 @@
 name=Clickhouse_Connector
 qgisMinimumVersion=3.0
 description=This Plugin connects to Clickhouse
-version=1.0.0
-author=Suhora Technologies
+version=2.1.0
+author=Suhora Technologies |  Azista Industries
 email=support@suhora.com
 
-about=Provide a brief description of the plugin and its purpose.
+about=Connects to Clickhouse DB to render large geospatial data
 
 tracker=https://github.com/suhora/clickhouse_connector/issues
 repository=https://github.com/suhora/clickhouse_connector
@@ -40,7 +40,7 @@ deprecated=False
 # plugin_dependencies= 
 
 Category of the plugin: Raster, Vector, Database or Web
-# category=
+category=Database
 
 # If the plugin can run on QGIS Server.
 server=False
