@@ -6,6 +6,10 @@ It connects Clickhouse with QGIS, enabling seamless integration and visualizatio
 
 Query and Visualize [Clickhouse](https://clickhouse.com/) geospatial data in QGIS.
 
+![Detail increases as you zoom in](render_gif.gif)
+
+*Rendering refines automatically as you zoom in: the per-cell point cap is re-applied to the new view, so more detail appears.*
+
 **Requirements**
 
 ************
