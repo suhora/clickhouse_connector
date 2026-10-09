@@ -5,6 +5,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QDialog, QMessageBox, QLabel, QLineEdit
 from qgis.core import QgsApplication
 from .Clickhouse_dialog import Ui_ClickhouseDialogBase
+from .filters import FiltersPanel
 from .viewport_streamer import ViewportStreamer
 from .viewport_query import GRID_ROWS, GRID_COLS, POINTS_PER_CELL
 import json
@@ -128,6 +129,7 @@ class ClickhouseDialog(QDialog):
         self.ui = Ui_ClickhouseDialogBase()
         self.ui.setupUi(self)
         self.relayout()
+        self.filters.changed.connect(self.filters_changed)
         self.setup_connections()
 
         # Hide the progress bar initially
@@ -195,6 +197,8 @@ class ClickhouseDialog(QDialog):
         self.status = QLabel(self)
         self.status.setGeometry(left + 200, 122, 190, 27)  # same row/height as the Connect button
         self.status.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        self.filters = FiltersPanel(self)
+        self.filters.setGeometry(left, 340, full, 165)
         put(ui.querylabel, left, 515)
         ui.querybox.setGeometry(left, 535, full, 131)
         put(ui.gridsettingslabel, left, 675)
@@ -203,6 +207,14 @@ class ClickhouseDialog(QDialog):
         put(ui.clearbutton, left, 740)
         put(ui.displaybutton, left + full - ui.displaybutton.width(), 740)
         self.resize(786, 785)
+
+    def filters_changed(self):
+        """Mirror the GUI filters into the query box (display_data uses that text verbatim)."""
+        clauses = self.filters.clauses()
+        database, table = self.ui.databasebox.currentText(), self.ui.tablebox.currentText()
+        nl = chr(10)
+        self.ui.querybox.setPlainText(
+            f"SELECT * FROM {database}.{table}{nl}WHERE " + f"{nl}  AND ".join(clauses) if clauses else '')
 
     def setup_connections(self):
         self.ui.Connectbutton.clicked.connect(self.connect_to_clickhouse)
@@ -312,6 +324,7 @@ class ClickhouseDialog(QDialog):
             self.ui.latitudebox.clear()
             self.ui.longitudebox.clear()
             self.ui.linestringbox.clear()
+            self.filters.set_columns([c[0] for c in columns], {c[0]: c[1] for c in columns})
 
             point_columns = [name for name, column_type, *_ in columns if _base_type(column_type) == 'Point']
             numeric_columns = [name for name, column_type, *_ in columns if _base_type(column_type) in ('Float32', 'Float64')]
@@ -427,6 +440,7 @@ class ClickhouseDialog(QDialog):
         QMessageBox.critical(self, title, text)
 
     def clear_filter(self):
+        self.filters.clear()
         self.ui.querybox.clear()
 
     def save_credentials(self, host, port, username, password):
