@@ -272,6 +272,10 @@ class ClickhouseDialog(QDialog):
             self.ui.locationbox.addItems(point_columns)
             self.ui.latitudebox.addItems(numeric_columns)
             self.ui.longitudebox.addItems(numeric_columns)
+            # preselect columns that look like lat / lon instead of both defaulting to the first
+            for box, hints in ((self.ui.latitudebox, ('lat',)), (self.ui.longitudebox, ('lon', 'lng'))):
+                box.setCurrentIndex(next((i for i, n in enumerate(numeric_columns)
+                                          if any(h in n.lower() for h in hints)), 0))
             self.ui.linestringbox.addItems(linestring_columns)
 
             # Default to whichever mode this table actually has data for
