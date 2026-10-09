@@ -1,10 +1,11 @@
 import sys
 import os
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import Qt, QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QDialog, QMessageBox, QLineEdit
+from qgis.PyQt.QtWidgets import QAction, QDialog, QMessageBox, QLabel, QLineEdit
 from qgis.core import QgsApplication
 from .Clickhouse_dialog import Ui_ClickhouseDialogBase
+from .filters import FiltersPanel
 from .viewport_streamer import ViewportStreamer
 from .viewport_query import GRID_ROWS, GRID_COLS, POINTS_PER_CELL
 import json
@@ -127,6 +128,8 @@ class ClickhouseDialog(QDialog):
         self.iface = iface
         self.ui = Ui_ClickhouseDialogBase()
         self.ui.setupUi(self)
+        self.relayout()
+        self.filters.changed.connect(self.filters_changed)
         self.setup_connections()
 
         # Hide the progress bar initially
@@ -159,6 +162,60 @@ class ClickhouseDialog(QDialog):
         self.viewport_streamer.busy_changed.connect(self._set_busy)
         self.finished.connect(self._on_dialog_finished)
 
+    def relayout(self):
+        """Compact two-column layout (the .ui is fixed-position and generated, so it is rearranged here)."""
+        ui, left, right, half, full = self.ui, 10, 401, 375, 766
+
+        def put(widget, x, y, w=None):
+            widget.setGeometry(x, y, w or widget.width(), widget.height())
+
+        # credentials 2x2
+        for lbl, box, x, y in ((ui.hostlabel, ui.hostbox, left, 10), (ui.portlabel, ui.portbox, right, 10),
+                               (ui.usernamelabel, ui.usernamebox, left, 65),
+                               (ui.passwordlabel, ui.passwordbox, right, 65)):
+            put(lbl, x, y)
+            put(box, x, y + 20, half)
+        put(ui.savecredentialscheck, left, 125)
+        put(ui.Connectbutton, left + full - ui.Connectbutton.width(), 122)
+        ui.progressbar.setGeometry(left, 122, full, 31)
+        # database | table
+        for lbl, box, x in ((ui.databaselabel, ui.databasebox, left), (ui.tablelabel, ui.tablebox, right)):
+            put(lbl, x, 165)
+            put(box, x, 185, half)
+        put(ui.locationmodelabel, left, 225)
+        for r in (ui.pointmoderadio, ui.latlonmoderadio, ui.linestringmoderadio):
+            put(r, r.x(), 245)
+        # location column pickers: lat | lon side by side, point/linestring full width
+        put(ui.latitudelabel, left, 280)
+        put(ui.latitudebox, left, 300, half)
+        put(ui.longitudelabel, right, 280)
+        put(ui.longitudebox, right, 300, half)
+        for lbl, box in ((ui.locationlabel, ui.locationbox), (ui.linestringlabel, ui.linestringbox)):
+            put(lbl, left, 280)
+            put(box, left, 300, full)
+        # filters, query, grid settings, buttons
+        self.status = QLabel(self)
+        self.status.setGeometry(left + 200, 122, 190, 27)  # same row/height as the Connect button
+        self.status.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+        self.filters = FiltersPanel(self)
+        self.filters.setGeometry(left, 340, full, 165)
+        put(ui.querylabel, left, 515)
+        ui.querybox.setGeometry(left, 535, full, 131)
+        put(ui.gridsettingslabel, left, 675)
+        for i, box in enumerate((ui.gridrowsbox, ui.gridcolsbox, ui.pointspercellbox)):
+            box.setGeometry(left + i * 255, 700, 246, box.height())
+        put(ui.clearbutton, left, 740)
+        put(ui.displaybutton, left + full - ui.displaybutton.width(), 740)
+        self.resize(786, 785)
+
+    def filters_changed(self):
+        """Mirror the GUI filters into the query box (display_data uses that text verbatim)."""
+        clauses = self.filters.clauses()
+        database, table = self.ui.databasebox.currentText(), self.ui.tablebox.currentText()
+        nl = chr(10)
+        self.ui.querybox.setPlainText(
+            f"SELECT * FROM {database}.{table}{nl}WHERE " + f"{nl}  AND ".join(clauses) if clauses else '')
+
     def setup_connections(self):
         self.ui.Connectbutton.clicked.connect(self.connect_to_clickhouse)
         self.ui.databasebox.currentIndexChanged.connect(self.update_tables)
@@ -183,9 +240,11 @@ class ClickhouseDialog(QDialog):
         if busy:
             self.ui.progressbar.setRange(0, 0)
             self.ui.progressbar.show()
+            self.status.hide()  # progress bar covers this row
         else:
             self.ui.progressbar.setRange(0, 100)
             self.ui.progressbar.hide()
+            self.status.show()
 
     def update_location_mode(self):
         is_point_mode = self.ui.pointmoderadio.isChecked()
@@ -228,13 +287,14 @@ class ClickhouseDialog(QDialog):
             self.ui.databasebox.clear()
             self.ui.databasebox.addItems([db[0] for db in databases])
 
-            # Show success message
-            QMessageBox.information(self, "Connection Successful", "Connected to ClickHouse successfully!")
+            self.status.setText("Connected to ClickHouse successfully!")
+            self.status.setStyleSheet("color: green")
 
             # Save credentials if checkbox is checked
             if self.ui.savecredentialscheck.isChecked():
                 self.save_credentials(host, port, username, password)
         except Exception as e:
+            self.status.setText("")
             QMessageBox.critical(self, "Connection Error", f"Failed to connect to ClickHouse: {e}")
 
     def update_tables(self):
@@ -264,6 +324,7 @@ class ClickhouseDialog(QDialog):
             self.ui.latitudebox.clear()
             self.ui.longitudebox.clear()
             self.ui.linestringbox.clear()
+            self.filters.set_columns([c[0] for c in columns], {c[0]: c[1] for c in columns})
 
             point_columns = [name for name, column_type, *_ in columns if _base_type(column_type) == 'Point']
             numeric_columns = [name for name, column_type, *_ in columns if _base_type(column_type) in ('Float32', 'Float64')]
@@ -272,6 +333,10 @@ class ClickhouseDialog(QDialog):
             self.ui.locationbox.addItems(point_columns)
             self.ui.latitudebox.addItems(numeric_columns)
             self.ui.longitudebox.addItems(numeric_columns)
+            # preselect columns that look like lat / lon instead of both defaulting to the first
+            for box, hints in ((self.ui.latitudebox, ('lat',)), (self.ui.longitudebox, ('lon', 'lng'))):
+                box.setCurrentIndex(next((i for i, n in enumerate(numeric_columns)
+                                          if any(h in n.lower() for h in hints)), 0))
             self.ui.linestringbox.addItems(linestring_columns)
 
             # Default to whichever mode this table actually has data for
@@ -375,6 +440,7 @@ class ClickhouseDialog(QDialog):
         QMessageBox.critical(self, title, text)
 
     def clear_filter(self):
+        self.filters.clear()
         self.ui.querybox.clear()
 
     def save_credentials(self, host, port, username, password):

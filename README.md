@@ -6,11 +6,15 @@ It connects Clickhouse with QGIS, enabling seamless integration and visualizatio
 
 Query and Visualize [Clickhouse](https://clickhouse.com/) geospatial data in QGIS.
 
+![Detail increases as you zoom in](render_gif.gif)
+
+*Rendering refines automatically as you zoom in: the per-cell point cap is re-applied to the new view, so more detail appears.*
+
 **Requirements**
 
 ************
 QGIS 3.34 LTR (tested; earlier 3.x versions not verified)
-- Tested successfully in 3.44.13
+- Tested successfully in 3.44.15
 
 **Important Note**
 
@@ -21,9 +25,14 @@ QGIS 3.34 LTR (tested; earlier 3.x versions not verified)
    - **Lat/Lon Columns**: two separate numeric (`Float32`/`Float64`) columns; pick which is latitude and which is longitude.
    - **LineString Column**: a native ClickHouse `LineString` column, rendered as a line layer instead of points.
  - **Viewport-driven rendering**: Display AIS doesn't load the whole result set at once.
-   - In Point/Lat-Lon mode, it splits the current map view into a grid and fetches up to a capped number of points per grid cell, so the total number of rendered points stays bounded no matter how large the table is. Grid rows, columns, and points-per-cell are adjustable from the **Grid Settings** row (defaults: 10 rows, 10 columns, 100 points per cell). Recommended to use <200k capped points overall.
+   - In Point/Lat-Lon mode, it splits the current map view into a grid and fetches up to a capped number of points per grid cell, so the total number of rendered points stays bounded no matter how large the table is. Grid rows, columns, and points-per-cell are adjustable from the **Grid Settings** row (defaults: 100 rows, 100 columns, 3 points per cell). Recommended to use <200k capped points overall.
    - In LineString mode, grid-cell capping doesn't apply to lines (a line has no single position to bucket into a cell), so the **Grid Settings** row is hidden and v1 fetches every line whose bounding box overlaps the viewport, uncapped — a pathologically large table of huge lines can mean a slow/heavy fetch.
    - Either way, as you pan or zoom the query automatically refreshes to match the new view.
+ - **Connection**: enter host, port, username and password, then click **Connect**. A green status line next to the button confirms success (failures show an error popup). Tick **Save Database Credentials** to remember them, including the password, which is stored unencrypted. Once connected, pick the database and table from the dropdowns; Lat/Lon pickers preselect columns named like `lat` / `lon`.
+ - **Filters**: click **+ Add Filter** to filter without writing SQL. Each row is a column, an operator and a value.
+   - Operators: `=`, `!=`, `>`, `>=`, `<`, `<=`, `BETWEEN`, `IN` / `NOT IN` (comma-separated values), `LIKE` / `NOT LIKE`, `IS NULL`, `IS NOT NULL`.
+   - Date / DateTime columns use a date-time picker (calendar popup; click the hour/minute/second part to edit the time). Timestamps are interpreted in the column's timezone, or the server's if it has none.
+   - All filters are combined with `AND`; incomplete rows are ignored. The **Basic Query Tool** box is rewritten as `SELECT * FROM database.table WHERE ...` whenever filters change, so edit the SQL after setting filters (a later filter change overwrites manual edits). **Clear Query** removes the filters too. Filters reset when you pick a different table.
  - By default, before the per-cell cap is applied, the query is simply `SELECT * FROM database.table` — shown as placeholder text in the Basic Query Tool box once a table is selected. Type your own query there (e.g. to filter by time range or any other column) to use that instead — it still composes with the viewport grid/cap.
    - A very zoomed-out view (e.g. the whole world) still has to check every candidate row against the current viewport, so it can be noticeably slower than a zoomed-in view. May be able to resolve with a spatial index in the DB.
 ## Install

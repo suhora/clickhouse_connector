@@ -8,9 +8,9 @@ imports and runs with plain `python viewport_query.py` outside a QGIS process â€
 _demo() below.
 """
 
-GRID_ROWS = 10
-GRID_COLS = 10
-POINTS_PER_CELL = 100
+GRID_ROWS = 100
+GRID_COLS = 100
+POINTS_PER_CELL = 3
 
 
 def canvas_bbox_wgs84(iface):
